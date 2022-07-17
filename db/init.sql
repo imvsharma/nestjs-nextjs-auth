@@ -1,0 +1,4 @@
+CREATE USER user_ms;
+
+CREATE DATABASE user_db;
+GRANT ALL PRIVILEGES ON DATABASE user_db TO user_ms;

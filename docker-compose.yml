@@ -1,0 +1,99 @@
+version: '3.9'
+services:
+  rabbitmq:
+    image: ${RABBITMQ_IMAGE}
+    container_name: ${RABBITMQ_CONTAINER_NAME}
+    ports:
+      - ${RABBITMQ_AMQP_PORT}:5672
+      - ${RABBITMQ_LOCALHOST_PORT}:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - rabbitmq_nodejs
+  
+  postgresdb:
+    image: ${POSTGRES_IMAGE}
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    build: 
+      context: ./db
+      dockerfile: db.Dockerfile
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    volumes: 
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - postgresdb
+
+  pgadmin:
+    image: ${PGADMIN_IMAGE}
+    container_name: ${PGADMIN_CONTAINER_NAME}
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - 5050:80
+    networks:
+      - postgresdb
+    depends_on: 
+      - postgresdb
+    
+  user-ms:
+    container_name: ${USER_MS_CONTAINER_NAME}
+    image: ${USER_MS_CONTAINER_NAME}
+    build:
+      dockerfile: Dockerfile
+      context: ./microservices/user-ms
+      target: ${USER_MS_ENV}
+    depends_on: 
+      - rabbitmq
+    ports:
+      - ${USER_MS_PORT}:${USER_MS_PORT}
+    environment:
+      - NODE_ENV=${USER_MS_ENV}
+      - MICROSERVICE_NAME=${USER_MS_MICROSERVICE_NAME}
+      - PORT=${USER_MS_PORT}
+      - MESSAGE_QUEUE_URL=${RABBITMQ_AMQP_URL}
+      - MESSAGE_QUEUE_NAME=${RABBITMQ_USER_QUEUE}
+    volumes:
+      - ./microservices/user-ms:/usr/src/app
+    command: npm run start:dev
+    networks:
+      - rabbitmq_nodejs
+      - postgresdb
+  
+  auth-ms:
+    container_name: ${AUTH_MS_CONTAINER_NAME}
+    image: ${AUTH_MS_CONTAINER_NAME}
+    build:
+      dockerfile: Dockerfile
+      context: ./microservices/auth-ms
+      target: ${AUTH_MS_ENV}
+    ports:
+      - ${AUTH_MS_PORT}:${AUTH_MS_PORT}
+    environment:
+      - NODE_ENV=${AUTH_MS_ENV}
+      - MICROSERVICE_NAME=${AUTH_MS_MICROSERVICE_NAME}
+      - PORT=${AUTH_MS_PORT}
+      - MESSAGE_QUEUE_URL=${RABBITMQ_AMQP_URL}
+      - MESSAGE_QUEUE_NAME=${RABBITMQ_AUTH_QUEUE}
+
+    volumes:
+      - ./microservices/auth-ms:/usr/src/app
+      - ./microservices/auth-ms/node_modules:/usr/src/app/node_modules
+    command: npm run start:dev
+    networks:
+      - rabbitmq_nodejs
+      - postgresdb
+
+networks:
+  rabbitmq_nodejs:
+    driver: bridge
+  postgresdb:
+    driver: bridge
