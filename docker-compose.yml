@@ -61,6 +61,7 @@ services:
       - PORT=${USER_MS_PORT}
       - MESSAGE_QUEUE_URL=${RABBITMQ_AMQP_URL}
       - MESSAGE_QUEUE_NAME=${RABBITMQ_USER_QUEUE}
+      - DATABASE_URL=${POSTGRES_DB_CONNECTION_STRING}
     volumes:
       - ./microservices/user-ms:/usr/src/app
     command: npm run start:dev
