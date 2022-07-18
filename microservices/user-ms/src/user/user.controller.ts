@@ -8,6 +8,7 @@ import {
   RequestMapping,
   RequestMethod,
 } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
 import { IResponse } from './response.interface';
 import { CreateUserDTO } from './user.dto';
 import { User } from './user.entity';
@@ -132,5 +133,23 @@ export class UserController {
       };
       return response;
     }
+  }
+
+  @MessagePattern({ role: 'user', cmd: 'get' })
+  async validateUser(userDetails: {
+    username: string;
+    password: string;
+  }): Promise<User | null | any> {
+    this.logger.log(
+      `ValidateUser :: getting userDetails from auth service ::   ${JSON.stringify(
+        userDetails,
+      )}`,
+    );
+    const user: User | null | any = this.userService.validateUser(
+      userDetails.username,
+      userDetails.password,
+    );
+
+    return user;
   }
 }

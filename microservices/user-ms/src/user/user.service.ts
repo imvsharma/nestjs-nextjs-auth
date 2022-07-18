@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDTO } from './user.dto';
 import { User } from './user.entity';
-import { generateUUID, hashedPassword } from './user.helper';
+import { generateUUID, hashedPassword, isMatch } from './user.helper';
 @Injectable()
 export class UserService {
   private logger: Logger = new Logger(UserService.name);
@@ -52,5 +52,41 @@ export class UserService {
       .delete()
       .where('id = id', { id })
       .execute();
+  }
+
+  async validateUser(
+    username: string,
+    password: string,
+  ): Promise<User | null | any> {
+    const user = await this.userRepository.findOne({
+      where: { username: username },
+    });
+
+    this.logger.log(
+      `validateUser :: get details from user controller :: userDetails : ${JSON.stringify(
+        user,
+      )}`,
+    );
+
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    } else {
+      const isMatched = await isMatch(password, user.password);
+      if (isMatched) {
+        return {
+          success: true,
+          message: 'User found',
+          user: user,
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Password is incorrect',
+        };
+      }
+    }
   }
 }
