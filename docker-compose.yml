@@ -84,6 +84,7 @@ services:
       - PORT=${AUTH_MS_PORT}
       - MESSAGE_QUEUE_URL=${RABBITMQ_AMQP_URL}
       - MESSAGE_QUEUE_NAME=${RABBITMQ_AUTH_QUEUE}
+      - SECRET_KEY=${SECRET_KEY}
 
     volumes:
       - ./microservices/auth-ms:/usr/src/app
