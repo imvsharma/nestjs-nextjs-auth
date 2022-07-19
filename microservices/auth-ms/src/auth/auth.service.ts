@@ -48,4 +48,14 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
     };
   }
+
+  validateToken(token: string) {
+    return this.jwtService.verify(token);
+  }
+
+  getInfoFromToken(token: string) {
+    if (this.jwtService.verify(token)) {
+      return this.jwtService.decode(token);
+    }
+  }
 }

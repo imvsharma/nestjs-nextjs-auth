@@ -5,5 +5,6 @@ export const configuration = () => {
     port: process.env.PORT,
     messageQueueUrl: process.env.MESSAGE_QUEUE_URL,
     messageQueueName: process.env.MESSAGE_QUEUE_NAME,
+    authQueueName: process.env.AUTH_QUEUE_NAME,
   };
 };

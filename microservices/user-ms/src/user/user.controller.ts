@@ -1,14 +1,18 @@
 import {
   Body,
   Controller,
+  Headers,
   HttpCode,
+  HttpException,
   HttpStatus,
   Logger,
   Param,
   RequestMapping,
   RequestMethod,
+  UseGuards,
 } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
+import { AuthGuard } from 'src/guards/auth.guard';
 import { IResponse } from './response.interface';
 import { CreateUserDTO } from './user.dto';
 import { User } from './user.entity';
@@ -151,5 +155,25 @@ export class UserController {
     );
 
     return user;
+  }
+
+  @UseGuards(AuthGuard)
+  @RequestMapping({ path: '/profile/:id', method: RequestMethod.GET })
+  @HttpCode(HttpStatus.OK)
+  async getProfile(
+    @Param('id') id: string,
+    @Headers('authorization') header: string,
+  ) {
+    const tokenInfo = await this.userService.getTokenInfo(header);
+    const userid: string = tokenInfo?.sub;
+    if (id !== userid)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const user: User = await this.userService.getUser(userid);
+    const response: IResponse = {
+      sucess: true,
+      message: 'User fetched successfully',
+      user: user,
+    };
+    return response;
   }
 }

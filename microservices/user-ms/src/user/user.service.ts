@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
+import { lastValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
 import { CreateUserDTO } from './user.dto';
 import { User } from './user.entity';
@@ -10,6 +12,7 @@ export class UserService {
 
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @Inject('AUTH_SERVICE') private authClient: ClientProxy,
   ) {}
 
   async createUser(userDetails: CreateUserDTO): Promise<User> {
@@ -88,5 +91,13 @@ export class UserService {
         };
       }
     }
+  }
+
+  async getTokenInfo(token) {
+    return lastValueFrom(
+      this.authClient
+        .send({ role: 'auth', cmd: 'get' }, { jwt: token?.split(' ')[1] })
+        .pipe(timeout(5000)),
+    );
   }
 }

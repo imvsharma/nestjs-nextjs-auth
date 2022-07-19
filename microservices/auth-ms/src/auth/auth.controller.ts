@@ -8,6 +8,7 @@ import {
   RequestMethod,
   UseGuards,
 } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
 import { LocalAuthGuard } from 'src/guard/local.guard';
 import { AuthDTO } from './auth.dto';
 import { AuthService } from './auth.service';
@@ -35,5 +36,28 @@ export class AuthController {
         return user;
       }
     } catch (err) {}
+  }
+
+  @MessagePattern({ role: 'auth', cmd: 'check' })
+  async loggedIn(data) {
+    try {
+      const res = this.authService.validateToken(data.jwt);
+      return res;
+    } catch (err) {
+      this.logger.error(`Error in loggedIn ${JSON.stringify(err)}`);
+      return false;
+    }
+  }
+
+  @MessagePattern({ role: 'auth', cmd: 'get' })
+  async getTokenInfo(data) {
+    try {
+      const res = this.authService.getInfoFromToken(data.jwt);
+      return res;
+    } catch (err) {
+      this.logger.error(`Error in getTokenInfo ${JSON.stringify(err)}`);
+      Logger.log(err);
+      return false;
+    }
   }
 }
